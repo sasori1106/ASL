@@ -1,3 +1,10 @@
+import sys
+print("=" * 50)
+print("STARTING APPLICATION")
+print(f"Python version: {sys.version}")
+print("=" * 50)
+
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import cv2
@@ -585,7 +592,42 @@ def collect_sequence_data():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
+@app.route('/')
+def index():
+    """Root endpoint - API health check"""
+    return jsonify({
+        'status': 'running',
+        'service': 'ASL Sequence Data Collection API',
+        'version': '1.0',
+        'endpoints': {
+            'collect_sequence_data': {
+                'url': '/api/collect-sequence-data',
+                'method': 'POST',
+                'description': 'Collect ASL sequence data with frames and keypoints'
+            }
+        }
+    })
+
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({'status': 'healthy'}), 200
+
 if __name__ == '__main__':
+    print("Loading actions...")
+    load_actions()
+    print("Loading model if exists...")
+    load_model_if_exists()
+    
+    port = int(os.environ.get('PORT', 10000))
+    print(f"Starting Flask app on port {port}")
+    
+    app.run(host='0.0.0.0', port=port, debug=False)
+else:
+    # This runs when Gunicorn imports the module
+    print("App module loaded by Gunicorn")
     load_actions()
     load_model_if_exists()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print(f"Available routes: {[str(rule) for rule in app.url_map.iter_rules()]}")
+
+    
